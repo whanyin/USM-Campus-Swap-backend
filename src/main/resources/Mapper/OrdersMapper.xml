@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cmt322.usmsecondhand.mapper.OrdersMapper">
+
+    <resultMap id="BaseResultMap" type="com.cmt322.usmsecondhand.model.Orders">
+            <id property="id" column="id" />
+            <result property="orderNo" column="orderNo" />
+            <result property="goodsId" column="goodsId" />
+            <result property="buyerId" column="buyerId" />
+            <result property="sellerId" column="sellerId" />
+            <result property="quantity" column="quantity" />
+            <result property="totalAmount" column="totalAmount" />
+            <result property="deliveryMethod" column="deliveryMethod" />
+            <result property="pickupLocation" column="pickupLocation" />
+            <result property="pickupTime" column="pickupTime" />
+            <result property="expressAddress" column="expressAddress" />
+            <result property="orderStatus" column="orderStatus" />
+            <result property="paymentMethod" column="paymentMethod" />
+            <result property="paymentTime" column="paymentTime" />
+            <result property="buyerNote" column="buyerNote" />
+            <result property="sellerNote" column="sellerNote" />
+            <result property="createTime" column="createTime" />
+            <result property="updateTime" column="updateTime" />
+            <result property="completeTime" column="completeTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,orderNo,goodsId,buyerId,sellerId,quantity,
+        totalAmount,deliveryMethod,pickupLocation,pickupTime,expressAddress,
+        orderStatus,paymentMethod,paymentTime,buyerNote,sellerNote,
+        createTime,updateTime,completeTime
+    </sql>
+</mapper>

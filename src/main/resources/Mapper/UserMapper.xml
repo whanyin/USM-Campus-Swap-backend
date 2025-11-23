@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cmt322.usmsecondhand.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="com.cmt322.usmsecondhand.model.User">
+            <id property="id" column="id" />
+            <result property="username" column="username" />
+            <result property="userAccount" column="userAccount" />
+            <result property="avatarUrl" column="avatarUrl" />
+            <result property="gender" column="gender" />
+            <result property="userPassword" column="userPassword" />
+            <result property="phone" column="phone" />
+            <result property="usmEmail" column="usmEmail" />
+            <result property="emailVerified" column="emailVerified" />
+            <result property="campus" column="campus" />
+            <result property="studentId" column="studentId" />
+            <result property="school" column="school" />
+            <result property="balance" column="balance" />
+            <result property="userStatus" column="userStatus" />
+            <result property="createTime" column="createTime" />
+            <result property="updateTime" column="updateTime" />
+            <result property="isDelete" column="isDelete" />
+            <result property="userRole" column="userRole" />
+            <result property="address" column="address" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,username,userAccount,avatarUrl,gender,userPassword,
+        phone,usmEmail,emailVerified,campus,studentId,
+        school,balance,userStatus,createTime,updateTime,
+        isDelete,userRole,address
+    </sql>
+</mapper>
