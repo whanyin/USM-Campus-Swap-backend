@@ -22,6 +22,9 @@ public class OrdersVO extends Orders implements Serializable {
     private String counterpartyName; // 交易对手名字
     private String counterpartyAvatar;
 
+    private String buyerName;  // 用于展示买家用户名
+    private String sellerName; // 用于展示卖家用户名
+
     public static OrdersVO objToVo(Orders orders) {
         if (orders == null) return null;
         OrdersVO vo = new OrdersVO();

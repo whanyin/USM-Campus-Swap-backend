@@ -147,7 +147,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setStudentId(studentId);
         user.setSchool(school);
         user.setPhone(phone);
-        user.setBalance(new BigDecimal("1000.00"));
         user.setGender(0); // Default: unknown gender
         user.setUserStatus(1); // Normal status
         user.setUserRole(0); // Normal user
@@ -195,6 +194,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             log.info("user login failed, userAccount cannot match userPassword");
             // 这里必须抛出异常，告诉前端具体原因
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "Incorrect username or password");
+        }
+
+        if (user.getIsDelete() != null && user.getIsDelete() == 1) {
+            log.warn("Login failed: Account is banned/deleted - {}", userAccount);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Account has been banned/deleted.");
         }
 
         // 3. 用户脱敏

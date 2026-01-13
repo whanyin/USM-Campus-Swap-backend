@@ -52,12 +52,13 @@ public class GoodsController {
     @PostMapping("/update")
     public BaseResponse<Boolean> updateGoods(@RequestBody GoodsUpdateRequest request, HttpServletRequest httpRequest) {
         if (request == null || request.getId() == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Invalid goods data");
         }
         User loginUser = userService.getLoginUser(httpRequest);
         boolean result = goodsService.updateGoods(request, loginUser);
         return ResultUtils.success(result);
     }
+
 
     /**
      * 搜索商品 / 获取商品列表
@@ -81,6 +82,20 @@ public class GoodsController {
         }
         GoodsVO goodsVO = goodsService.getGoodsDetail(id, httpRequest);
         return ResultUtils.success(goodsVO);
+    }
+
+    @GetMapping("/list/page/vo")
+    public BaseResponse<IPage<GoodsVO>> listGoodsVOByPage(
+            @RequestParam(defaultValue = "1") int current,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) String title,      // 接收前端传来的 keyword
+            @RequestParam(required = false) Long categoryId,   // 接收分类 ID
+            @RequestParam(required = false) Integer status,    // 接收状态 (前端传了 1)
+            HttpServletRequest request) {
+
+        // 调用 Service
+        IPage<GoodsVO> result = goodsService.listGoodsVOByPage(current, size, title, categoryId, status);
+        return ResultUtils.success(result);
     }
 
     /**

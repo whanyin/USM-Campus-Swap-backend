@@ -40,6 +40,7 @@ public interface GoodsService extends IService<Goods> {
      */
     IPage<Goods> listGoods(Integer pageNum, Integer pageSize, String keyword, Long categoryId);
 
+    IPage<GoodsVO> listGoodsVOByPage(int current, int size, String title, Long categoryId, Integer status);
     /**
      * 删除商品
      */

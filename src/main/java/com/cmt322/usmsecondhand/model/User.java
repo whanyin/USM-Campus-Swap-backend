@@ -100,7 +100,6 @@ public class User implements Serializable {
     /**
      * Logical Delete 0-Not Deleted 1-Deleted
      */
-    @TableLogic
     private Integer isDelete;
 
     /**

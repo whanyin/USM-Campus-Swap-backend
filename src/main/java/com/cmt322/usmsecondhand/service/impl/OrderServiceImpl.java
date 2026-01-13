@@ -1,6 +1,9 @@
 package com.cmt322.usmsecondhand.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cmt322.usmsecondhand.common.ErrorCode;
 import com.cmt322.usmsecondhand.exception.BusinessException;
@@ -15,6 +18,8 @@ import com.cmt322.usmsecondhand.service.GoodsService;
 import com.cmt322.usmsecondhand.service.OrderService;
 import com.cmt322.usmsecondhand.service.UserService;
 import jakarta.annotation.Resource;
+import org.springframework.beans.BeanUtils;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -250,5 +255,40 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
         }
 
         return true;
+    }
+
+
+    @Override
+    public IPage<OrdersVO> listOrderVOByPage(int current, int size, String orderNo, Integer status) {
+        // 1. 注意这里：泛型必须是你的实体类 Orders，而不是 Order
+        Page<Orders> orderPage = new Page<>(current, size);
+        QueryWrapper<Orders> queryWrapper = new QueryWrapper<>();
+
+        queryWrapper.eq(StringUtils.isNotBlank(orderNo), "orderNo", orderNo);
+        queryWrapper.eq(status != null, "orderStatus", status); // 注意字段名是否为 orderStatus
+        queryWrapper.orderByDesc("createTime");
+
+        this.page(orderPage, queryWrapper);
+
+        // 2. 这里的变量类型也要改为 Orders
+        List<OrdersVO> voList = orderPage.getRecords().stream().map(ordersEntity -> {
+            OrdersVO vo = new OrdersVO();
+            BeanUtils.copyProperties(ordersEntity, vo);
+
+            // 3. 现在 getBuyerId() 等方法就可以正常调用了
+            User buyer = userService.getById(ordersEntity.getBuyerId());
+            User seller = userService.getById(ordersEntity.getSellerId());
+            if (buyer != null) vo.setBuyerName(buyer.getUsername());
+            if (seller != null) vo.setSellerName(seller.getUsername());
+
+            Goods goods = goodsService.getById(ordersEntity.getGoodsId());
+            if (goods != null) vo.setGoodsTitle(goods.getTitle());
+
+            return vo;
+        }).collect(Collectors.toList());
+
+        Page<OrdersVO> voPage = new Page<>(current, size, orderPage.getTotal());
+        voPage.setRecords(voList);
+        return voPage;
     }
 }

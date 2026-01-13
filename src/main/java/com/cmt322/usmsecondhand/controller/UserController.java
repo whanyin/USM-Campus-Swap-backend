@@ -1,14 +1,16 @@
 package com.cmt322.usmsecondhand.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cmt322.usmsecondhand.common.BaseResponse;
 import com.cmt322.usmsecondhand.common.ErrorCode;
 import com.cmt322.usmsecondhand.common.ResultUtils;
 import com.cmt322.usmsecondhand.constant.UserConstant;
 import com.cmt322.usmsecondhand.exception.BusinessException;
 import com.cmt322.usmsecondhand.model.User;
-import com.cmt322.usmsecondhand.model.request.ChangePasswordRequest;
-import com.cmt322.usmsecondhand.model.request.UserLoginRequest;
-import com.cmt322.usmsecondhand.model.request.UserRegisterRequest;
+import com.cmt322.usmsecondhand.model.request.*;
 import com.cmt322.usmsecondhand.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -16,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import org.apache.commons.lang3.StringUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import com.cmt322.usmsecondhand.model.request.UserUpdateRequest;
 
 import static com.cmt322.usmsecondhand.constant.UserConstant.USER_LOGIN_STATE;
 
@@ -189,6 +190,49 @@ public class UserController {
         );
 
         return ResultUtils.success(result);
+    }
+
+    /**
+     * 分页获取用户列表（仅管理员）
+     */
+    @GetMapping("/list/page")
+    public BaseResponse<IPage<User>> listUserByPage(
+            @RequestParam(defaultValue = "1") Integer current,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String username,
+            HttpServletRequest request) {
+        // 权限校验
+        if (!userService.isAdmin(request)) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        Page<User> userPage = new Page<>(current, size);
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like(StringUtils.isNotBlank(username), "username", username);
+        queryWrapper.orderByDesc("createTime");
+
+        return ResultUtils.success(userService.page(userPage, queryWrapper));
+    }
+
+    /**
+     * 更新用户状态（封禁/启用）
+     */
+    @PostMapping("/update/status")
+    public BaseResponse<Boolean> updateUserStatus(@RequestBody UserStatusUpdateRequest request, HttpServletRequest httpRequest) {
+        if (!userService.isAdmin(httpRequest)) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+
+        // 使用 UpdateWrapper 强制更新
+        UpdateWrapper<User> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", request.getId());
+
+        // 强制设置 isDelete 字段 (注意：这里 "isDelete" 要对应数据库里的列名)
+        // 如果数据库列名是 is_delete，请写 "is_delete"；如果是 isDelete，就写 "isDelete"
+        // 既然报错信息里是 WHERE ... isDelete=0，说明你的列名很可能就是 "isDelete"
+        updateWrapper.set("isDelete", request.getStatus());
+
+        // 使用 update(null, wrapper) 方法，而不是 updateById
+        return ResultUtils.success(userService.update(null, updateWrapper));
     }
 
 }

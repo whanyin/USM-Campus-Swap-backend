@@ -24,6 +24,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -84,6 +85,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
     }
 
     @Override
+    @Transactional
     public boolean updateGoods(GoodsUpdateRequest request, User loginUser) {
         Goods goods = this.getById(request.getId());
         if (goods == null) {
@@ -96,7 +98,8 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         }
 
         BeanUtils.copyProperties(request, goods);
-
+        Goods oldGoods = this.getById(request.getId());
+        goods.setUserId(oldGoods.getUserId());
         // 更新时也要重新处理图片 List -> JSON
         if (request.getImages() != null) {
             goods.setImages(gson.toJson(request.getImages()));
@@ -193,6 +196,51 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         }
 
         return goodsVO;
+    }
+
+    @Override
+    public IPage<GoodsVO> listGoodsVOByPage(int current, int size, String title, Long categoryId, Integer status) {
+        // 1. 构造 MyBatis-Plus 分页对象
+        Page<Goods> goodsPage = new Page<>(current, size);
+
+        // 2. 构造查询条件
+        QueryWrapper<Goods> queryWrapper = new QueryWrapper<>();
+
+        // 模糊匹配标题 (如果前端传了 keyword)
+        queryWrapper.like(StringUtils.isNotBlank(title), "title", title);
+
+        // 精确匹配分类 (如果前端选了 category)
+        queryWrapper.eq(categoryId != null && categoryId > 0, "categoryId", categoryId);
+
+        // 匹配状态 (通常只查 status=1 上架中的商品)
+        queryWrapper.eq(status != null, "status", status);
+
+        // 按创建时间倒序排列 (让新发布的商品排在前面)
+        queryWrapper.orderByDesc("createTime");
+
+        // 3. 执行查询
+        this.page(goodsPage, queryWrapper);
+
+        // 4. 将查询结果 (Goods 实体) 转换为前端需要的 GoodsVO
+        List<Goods> goodsList = goodsPage.getRecords();
+
+        List<GoodsVO> goodsVOList = goodsList.stream().map(goods -> {
+            GoodsVO goodsVO = new GoodsVO();
+            BeanUtils.copyProperties(goods, goodsVO);
+
+            User seller = userService.getById(goods.getUserId());
+            if (seller != null) {
+                goodsVO.setUserName(seller.getUsername());   // 设置卖家名字
+                goodsVO.setUserAvatar(seller.getAvatarUrl()); // 设置卖家头像 (前端卡片需要这个)
+            }
+            return goodsVO;
+        }).collect(Collectors.toList());
+
+        // 5. 封装回分页对象并返回
+        Page<GoodsVO> goodsVOPage = new Page<>(current, size, goodsPage.getTotal());
+        goodsVOPage.setRecords(goodsVOList);
+
+        return goodsVOPage;
     }
 
     @Override

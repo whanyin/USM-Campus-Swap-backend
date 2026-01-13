@@ -85,6 +85,10 @@ public class GoodsVO implements Serializable {
      */
     private String campus;
 
+    private String userName;
+
+    private String userAvatar;
+
     /**
      * 联系方式类型
      */

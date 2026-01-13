@@ -1,5 +1,6 @@
 package com.cmt322.usmsecondhand.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.cmt322.usmsecondhand.model.Orders;
 import com.cmt322.usmsecondhand.model.User;
@@ -43,4 +44,6 @@ public interface OrderService extends IService<Orders> {
      * 2. 返回值改为 boolean (成功/失败)
      */
     boolean processPayment(OrderPayRequest request, User buyer);
+
+    IPage<OrdersVO> listOrderVOByPage(int current, int size, String orderNo, Integer status);
 }
