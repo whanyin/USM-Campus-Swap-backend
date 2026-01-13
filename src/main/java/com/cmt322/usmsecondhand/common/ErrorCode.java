@@ -13,7 +13,17 @@ public enum ErrorCode {
     NULL_ERROR(40001, "Request data cannot be empty", ""),
     NOT_LOGIN(40100, "Please login first", ""),
     NO_AUTH(40101, "Access denied", ""),
-    SYSTEM_ERROR(50000, "Internal server error", "");
+    OPERATION_ERROR(40111, "Operation error", ""),
+    SYSTEM_ERROR(50000, "Internal server error", ""),
+    // 在 ErrorCode 枚举中添加
+    EMAIL_SEND_ERROR(40301, "Failed to send email", "Failed to send email"),
+    EMAIL_CONNECT_ERROR(40301, "Failed connect to email server", "Failed to connect to email server"),
+    EMAIL_VERIFY_ERROR(40302, "Email verification failed", "Email verification failed"),
+    EMAIL_LIMIT_ERROR(40303, "Email sending limit exceeded", "Please wait before sending another email"),
+    EMAIL_CODE_ERROR(40304, "Invalid verification code", "Verification code is invalid or expired"),
+    EMAIL_FORMAT_ERROR(40305, "Invalid email format", "Please enter a valid email address"),
+    EMAIL_NOT_MATCH(40306, "Email does not match user account", "Email does not belong to current user");;
+
 
 
 

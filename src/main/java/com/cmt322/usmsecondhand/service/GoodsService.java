@@ -1,38 +1,51 @@
 package com.cmt322.usmsecondhand.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.cmt322.usmsecondhand.model.Goods;
+import com.cmt322.usmsecondhand.model.User;
+import com.cmt322.usmsecondhand.model.request.GoodsPublishRequest;
+import com.cmt322.usmsecondhand.model.request.GoodsUpdateRequest;
+import com.cmt322.usmsecondhand.model.vo.GoodsVO;
+import jakarta.servlet.http.HttpServletRequest;
 
-/**
-* @author 米老头
-* @description 针对表【goods(Goods Table)】的数据库操作Service
-* @createDate 2025-11-22 14:08:36
-*/
+import java.util.List;
+
 public interface GoodsService extends IService<Goods> {
-    // 发布商品
-    boolean publishGoods(Goods goods, Long userId);
 
-    // 更新商品
-    boolean updateGoods(Goods goods, Long userId);
+    /**
+     * 发布商品
+     */
+    long publishGoods(GoodsPublishRequest request, User loginUser);
 
-    // 删除商品（逻辑删除）
-    boolean deleteGoods(Long goodsId, Long userId);
+    /**
+     * 更新商品
+     */
+    boolean updateGoods(GoodsUpdateRequest request, User loginUser);
 
-    // 获取商品详情
-    GoodsVO getGoodsDetail(Long goodsId);
+    /**
+     * 搜索商品
+     */
+    List<GoodsVO> searchGoods(String keyword, Long categoryId);
 
-    // 根据分类获取商品列表
-    List<GoodsVO> getGoodsByCategory(Long categoryId, Integer page, Integer size);
+    /**
+     * 获取商品详情
+     */
+    GoodsVO getGoodsDetail(long id, HttpServletRequest request);
 
-    // 搜索商品
-    List<GoodsVO> searchGoods(String keyword, Integer page, Integer size);
+    // ★★★ 删除了那个多余的 publishGoods(..., Long userId) ★★★
 
-    // 获取用户发布的商品
-    List<GoodsVO> getUserGoods(Long userId);
+    /**
+     * 首页分页列表
+     */
+    IPage<Goods> listGoods(Integer pageNum, Integer pageSize, String keyword, Long categoryId);
 
-    // 获取热门商品
-    List<GoodsVO> getHotGoods(Integer limit);
+    /**
+     * 删除商品
+     */
+    boolean deleteGoods(long id, User loginUser, boolean isAdmin);
 
-    // 更新商品状态（如标记为已售出）
-    boolean updateGoodsStatus(Long goodsId, Integer status, Long userId);
+    // 在接口中添加
+    List<GoodsVO> listMyGoods(User loginUser, Integer status);
+    boolean updateStatus(Long goodsId, Integer status, User loginUser);
 }

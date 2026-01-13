@@ -14,7 +14,7 @@ public class GoodsPublishRequest {
     private BigDecimal price;
     private Long categoryId;
     private String coverImage;
-    private Object images;
+    private List<String> images;
     private Integer condition;
     private String campus;
     private List<Integer> contactTypes;

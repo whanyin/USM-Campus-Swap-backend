@@ -3,16 +3,20 @@ package com.cmt322.usmsecondhand.controller;
 import com.cmt322.usmsecondhand.common.BaseResponse;
 import com.cmt322.usmsecondhand.common.ErrorCode;
 import com.cmt322.usmsecondhand.common.ResultUtils;
+import com.cmt322.usmsecondhand.constant.UserConstant;
 import com.cmt322.usmsecondhand.exception.BusinessException;
 import com.cmt322.usmsecondhand.model.User;
+import com.cmt322.usmsecondhand.model.request.ChangePasswordRequest;
 import com.cmt322.usmsecondhand.model.request.UserLoginRequest;
 import com.cmt322.usmsecondhand.model.request.UserRegisterRequest;
 import com.cmt322.usmsecondhand.service.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 import org.apache.commons.lang3.StringUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import com.cmt322.usmsecondhand.model.request.UserUpdateRequest;
 
 import static com.cmt322.usmsecondhand.constant.UserConstant.USER_LOGIN_STATE;
 
@@ -24,7 +28,7 @@ import static com.cmt322.usmsecondhand.constant.UserConstant.USER_LOGIN_STATE;
 @Slf4j
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(origins = {"http://localhost:3000"})
+@CrossOrigin(origins = {"http://localhost:3000"}, allowCredentials = "true")
 public class UserController {
     @Resource
     private UserService userService;
@@ -97,17 +101,62 @@ public class UserController {
 
 
     @PostMapping("/update")
-    public BaseResponse<Integer> updateUser(@RequestBody User user,HttpServletRequest request) {
-        //1.校验参数是否为空
-        if(user ==null)
-        {
-            throw  new BusinessException(ErrorCode.PARAMS_ERROR);
+    public BaseResponse<String> updateUser(@RequestBody UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
 
+
+        if (userUpdateRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = userService.getLoginUser(request);
-        int result = userService.updateUser(user,loginUser);
-        return ResultUtils.success(result);
 
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+
+        // 2. 准备更新对象
+        User user = new User();
+        user.setId(loginUser.getId()); // 必填：ID
+
+        // 3. 🛡️ 手动赋值 (放弃 BeanUtils，手动写最稳)
+        // 只有当前端传了值，我们才更新字段
+        if (userUpdateRequest.getAvatarUrl() != null) {
+            user.setAvatarUrl(userUpdateRequest.getAvatarUrl());
+        }
+        if (userUpdateRequest.getUsername() != null) {
+            user.setUsername(userUpdateRequest.getUsername());
+        }
+        if (userUpdateRequest.getPhone() != null) {
+            user.setPhone(userUpdateRequest.getPhone());
+        }
+        if (userUpdateRequest.getGender() != null) {
+            user.setGender(userUpdateRequest.getGender());
+        }
+        if (userUpdateRequest.getCampus() != null) {
+            user.setCampus(userUpdateRequest.getCampus());
+        }
+        if (userUpdateRequest.getStudentId() != null) {
+            user.setStudentId(userUpdateRequest.getStudentId());
+        }
+        if (userUpdateRequest.getSchool() != null) {
+            user.setSchool(userUpdateRequest.getSchool());
+        }
+        if (userUpdateRequest.getAddress() != null) {
+            user.setAddress(userUpdateRequest.getAddress());
+        }
+
+        // 4. 执行更新
+        // 如果上面没有任何一个 if 命中，MyBatis-Plus 还是会报错，所以最好加个判断
+        boolean result = userService.updateById(user);
+
+        if (!result) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Update failed");
+        }
+
+        // 5. 刷新 Session
+        User newUser = userService.getById(user.getId());
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, newUser);
+
+        return ResultUtils.success("Update success");
     }
 
     @PostMapping("/delete")
@@ -120,6 +169,26 @@ public class UserController {
         }
         boolean b = userService.removeById(id);
         return ResultUtils.success(b);
+    }
+
+    // UserController.java
+    @PostMapping("/change-password")
+    public BaseResponse<Boolean> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest,
+                                                HttpServletRequest request) {
+        if (changePasswordRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+
+        boolean result = userService.updatePassword(
+                changePasswordRequest.getOldPassword(),
+                changePasswordRequest.getNewPassword(),
+                loginUser
+        );
+
+        return ResultUtils.success(result);
     }
 
 }

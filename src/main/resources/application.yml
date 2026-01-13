@@ -13,11 +13,34 @@ spring:
     password: root
   #session ????
   session:
-    timeout: 86400
+    timeout: 30m
+    cookie:
+      domain: localhost
+      http-only: true
+      # secure: true
     store-type: redis
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
+
+#  mail:
+#    host: smtp.gmail.com
+#    port: 587
+#    username: ${GMAIL_USERNAME:heitmanm804@gmail.com}
+#    password: ${GMAIL_APP_PASSWORD:ohjy jirl xmqn dlvo}  # ⚠️ 应用专用密码，不是登录密码！
+#    protocol: smtp
+#    default-encoding: UTF-8
+#    properties:
+#      mail:
+#        smtp:
+#          auth: true
+#          starttls:
+#            enable: true
+#          connectiontimeout: 10000
+#          timeout: 10000
+#          writetimeout: 10000
+#        debug: true  # 开发时开启，可以看到详细的SMTP日志
+
 
 server:
   port: 8081
@@ -26,6 +49,11 @@ server:
     session:
       cookie:
         domain: localhost
+file:
+  # Windows 示例，注意斜杠
+  upload-dir: E:/cmt322 secondhand/uploads/
+  # 本地后端地址
+  domain: http://localhost:8081/api
 
 springdoc:
   api-docs:

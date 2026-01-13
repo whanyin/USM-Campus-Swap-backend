@@ -15,9 +15,11 @@ public class GoodsUpdateRequest {
     private BigDecimal price;
     private Long categoryId;
     private String coverImage;
-    private Object images;
+    private List<String> images;
     private Integer condition;
     private String campus;
+    private Integer status;
+    private Integer contactType;
     private List<Integer> contactTypes;
     private Integer deliveryMethod;
     private String pickupLocation;

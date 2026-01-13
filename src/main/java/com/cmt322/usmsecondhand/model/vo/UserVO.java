@@ -3,6 +3,7 @@ package com.cmt322.usmsecondhand.model.vo;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -39,19 +40,38 @@ public class UserVO implements Serializable {
      * 电话
      */
     private String phone;
-
     /**
-     * 邮箱
+     * USM Email (@usm.my)
      */
-    private String email;
+    private String usmEmail;
 
     /**
-     * 标签列表 json
+     * Email Verified 0-Not Verified 1-Verified
      */
-    private String tags;
+    private Integer emailVerified;
 
     /**
-     * 状态 0 - 正常
+     * Campus
+     */
+    private String campus;
+
+    /**
+     * Student ID
+     */
+    private String studentId;
+
+    /**
+     * school
+     */
+    private String school;
+
+    /**
+     * Account Balance
+     */
+    private BigDecimal balance;
+
+    /**
+     * User Status 0-Not Verified 1-Normal 2-Disabled
      */
     private Integer userStatus;
 

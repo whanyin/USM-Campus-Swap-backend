@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.math.BigDecimal;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +33,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Resource
     private UserMapper userMapper;
+
 
     /**
      * 盐值，混淆密码
@@ -81,10 +83,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "Invalid phone number format");
             }
 
-            // Verify if starts with +60
-            if (!phone.startsWith("+60")) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "Please enter a Malaysia phone number");
-            }
 
             // Verify if the rest are pure numbers
             String numberPart = phone.substring(3);
@@ -144,11 +142,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setUserAccount(userAccount);
         user.setUserPassword(dealPassword);
         user.setUsmEmail(usmEmail);
-        user.setEmailVerified(0); // Initial state: not verified
+        user.setEmailVerified(1); // Initial state: not verified
         user.setCampus(campus);
         user.setStudentId(studentId);
         user.setSchool(school);
         user.setPhone(phone);
+        user.setBalance(new BigDecimal("1000.00"));
         user.setGender(0); // Default: unknown gender
         user.setUserStatus(1); // Normal status
         user.setUserRole(0); // Normal user
@@ -164,38 +163,46 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public User userLogin(String userAccount, String userPassword, HttpServletRequest request) {
-        // 1. 校验
+        // 1. 校验逻辑 (任何一项失败，直接抛出异常，不要返回 null)
         if (StringUtils.isAnyBlank(userAccount, userPassword)) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username or password cannot be empty.");
         }
         if (userAccount.length() < 4) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Account length must be at least 4 characters.");
         }
         if (userPassword.length() < 8) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Password length must be at least 8 characters");
         }
-        // 账户不能包含特殊字符
+
+        // 校验账户特殊字符
         String validPattern = "[`~!@#$%^&*()+=|{}':;',\\\\[\\\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
         Matcher matcher = Pattern.compile(validPattern).matcher(userAccount);
         if (matcher.find()) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "The account contains illegal characters.");
         }
+
         // 2. 加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
+
         // 查询用户是否存在
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userAccount", userAccount);
         queryWrapper.eq("userPassword", encryptPassword);
         User user = userMapper.selectOne(queryWrapper);
-        // 用户不存在
+
+        // 用户不存在或密码错误
         if (user == null) {
             log.info("user login failed, userAccount cannot match userPassword");
-            return null;
+            // 这里必须抛出异常，告诉前端具体原因
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Incorrect username or password");
         }
+
         // 3. 用户脱敏
         User safetyUser = getSafetyUser(user);
+
         // 4. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, safetyUser);
+
         return safetyUser;
     }
 
@@ -211,6 +218,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return null;
         }
         User safetyUser = new User();
+
+        // 基本信息
         safetyUser.setId(originUser.getId());
         safetyUser.setUsername(originUser.getUsername());
         safetyUser.setUserAccount(originUser.getUserAccount());
@@ -218,12 +227,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         safetyUser.setGender(originUser.getGender());
         safetyUser.setPhone(originUser.getPhone());
         safetyUser.setUsmEmail(originUser.getUsmEmail());
+
+        safetyUser.setEmailVerified(originUser.getEmailVerified());
+        safetyUser.setBalance(originUser.getBalance());
+        safetyUser.setAddress(originUser.getAddress());
+
+        // 学校信息
         safetyUser.setCampus(originUser.getCampus());
         safetyUser.setSchool(originUser.getSchool());
         safetyUser.setStudentId(originUser.getStudentId());
+
+        // 系统信息
         safetyUser.setUserRole(originUser.getUserRole());
         safetyUser.setUserStatus(originUser.getUserStatus());
         safetyUser.setCreateTime(originUser.getCreateTime());
+
+        safetyUser.setUpdateTime(originUser.getUpdateTime());
+
         return safetyUser;
     }
 
@@ -293,6 +313,44 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public boolean isAdmin(User loginUser) {
         return loginUser != null && loginUser.getUserRole() == UserConstant.ADMIN_ROLE;
+    }
+
+    // 在 UserServiceImpl 中实现
+    // UserServiceImpl.java
+    @Override
+    public boolean updatePassword(String oldPassword, String newPassword, User loginUser) {
+        // 1. 参数校验
+        if (StringUtils.isAnyBlank(oldPassword, newPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Password cannot be empty");
+        }
+
+        // 2. 新旧密码不能相同
+        if (oldPassword.equals(newPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "New password cannot be the same as old password");
+        }
+
+        // 3. 新密码长度验证（至少8位）
+        if (newPassword.length() < 8) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "New password must be at least 8 characters");
+        }
+
+        // 4. 验证旧密码
+        Long userId = loginUser.getId();
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR, "User not found");
+        }
+
+        String encryptedOldPassword = DigestUtils.md5DigestAsHex((SALT + oldPassword).getBytes());
+        if (!user.getUserPassword().equals(encryptedOldPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Old password is incorrect");
+        }
+
+        // 5. 加密新密码并更新
+        String encryptedNewPassword = DigestUtils.md5DigestAsHex((SALT + newPassword).getBytes());
+        user.setUserPassword(encryptedNewPassword);
+
+        return this.updateById(user);
     }
 
 }
