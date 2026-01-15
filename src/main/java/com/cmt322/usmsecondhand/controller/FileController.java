@@ -52,7 +52,7 @@ public class FileController {
             
             // 5. 返回可访问的 URL (例如: http://localhost:8081/api/images/uuid.jpg)
             // 注意：这里的 /images/ 是我们在 WebMvcConfig 里配置的映射路径，或者 Nginx 配置的
-            String fileUrl = domain + "/images/" + fileName;
+            String fileUrl = domain + "/uploads/" + fileName;
             
             return ResultUtils.success(fileUrl);
         } catch (IOException e) {
